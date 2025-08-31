@@ -1,25 +1,49 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../components/NavBar";
-import { seedCourses } from "../utils/seedCourses"; 
-import { useStudent } from "../context/StudentContext";
+import { seedCourses } from "../utils/seedCourses";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { useStudent } from "../context/StudentContext";
 
 export default function CourseList() {
-  const { student } = useStudent();
+  const { student, loading } = useStudent();
   const [filter, setFilter] = useState("ALL"); // ALL, MANDATORY, ELECTIVE, SKILL
-  const [sortType, setSortType] = useState("NONE"); // NONE, CREDIT, POPULARITY
+  const [sortType, setSortType] = useState("NONE"); // NONE, CREDIT, POPULARITY, DIFFICULTY
+  const [searchQuery, setSearchQuery] = useState("");
   const [displayCourses, setDisplayCourses] = useState([]);
 
   useEffect(() => {
-    // Filter courses by student's year + global skill courses
-    let courses = seedCourses.filter(course =>
-      course.category === "SKILL" || course.year === student.year
-    );
+    if (!student) {
+      setDisplayCourses([]);
+      return;
+    }
+
+    // Convert student.year to string format "Year XX"
+    const studentYearStr = `Year 0${student.year}`;
+
+    let courses = seedCourses.filter(c => {
+      // SKILL courses are for all years
+      if (c.category === "SKILL") return true;
+
+      // Match student's year
+      if (c.year === studentYearStr) return true;
+
+      return false;
+    });
 
     // Apply category filter
     if (filter !== "ALL") {
-      courses = courses.filter(course => course.category === filter);
+      courses = courses.filter(c => c.category === filter);
+    }
+
+    // Apply search
+    const term = searchQuery.trim().toLowerCase();
+    if (term) {
+      courses = courses.filter(
+        c =>
+          c.name.toLowerCase().includes(term) ||
+          c.id.toLowerCase().includes(term)
+      );
     }
 
     // Apply sorting
@@ -27,17 +51,45 @@ export default function CourseList() {
       courses.sort((a, b) => a.credits - b.credits);
     } else if (sortType === "POPULARITY") {
       courses.sort((a, b) => b.popularity - a.popularity);
-    } else if (sortType === "NONE") {
-      // Sort by interests
+    } else if (sortType === "DIFFICULTY") {
+      courses.sort((a, b) => b.difficulty - a.difficulty);
+    } else {
+      // Default: sort by interest match
       courses.sort((a, b) => {
-        const aMatch = a.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
-        const bMatch = b.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
-        return bMatch - aMatch; // courses matching interests first
+        const aMatch = a.tags?.some(tag => student.interests.includes(tag))
+          ? 1
+          : 0;
+        const bMatch = b.tags?.some(tag => student.interests.includes(tag))
+          ? 1
+          : 0;
+        return bMatch - aMatch;
       });
     }
 
     setDisplayCourses(courses);
-  }, [student, filter, sortType]);
+  }, [student, filter, sortType, searchQuery]);
+
+  if (loading) {
+    return (
+      <div>
+        <NavBar />
+        <p style={{ textAlign: "center", marginTop: 20 }}>
+          Loading student profile...
+        </p>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div>
+        <NavBar />
+        <p style={{ textAlign: "center", marginTop: 20 }}>
+          No student data found. Please update your profile.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -45,21 +97,25 @@ export default function CourseList() {
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 12 }}>
         <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Available Courses</h2>
 
-        {/* Filters */}
+        {/* Search + Filters */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <label>Filter:</label>
-          <select onChange={(e) => setFilter(e.target.value)} value={filter}>
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by name or id"
+            style={{ flex: 1, padding: 8 }}
+          />
+          <select value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="ALL">All</option>
             <option value="MANDATORY">Mandatory</option>
             <option value="ELECTIVE">Elective</option>
             <option value="SKILL">Skill</option>
           </select>
-
-          <label>Sort:</label>
-          <select onChange={(e) => setSortType(e.target.value)} value={sortType}>
+          <select value={sortType} onChange={e => setSortType(e.target.value)}>
             <option value="NONE">By Interests</option>
             <option value="CREDIT">Credits</option>
             <option value="POPULARITY">Popularity</option>
+            <option value="DIFFICULTY">Difficulty</option>
           </select>
         </div>
 
@@ -68,10 +124,10 @@ export default function CourseList() {
           style={{
             display: "grid",
             gap: 16,
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))"
           }}
         >
-          {displayCourses.map((course) => (
+          {displayCourses.map(course => (
             <motion.div
               key={course.id}
               initial={{ opacity: 0, y: 20 }}
@@ -84,7 +140,7 @@ export default function CourseList() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
+                justifyContent: "space-between"
               }}
             >
               <div>
@@ -93,10 +149,11 @@ export default function CourseList() {
                 </div>
                 <div><b>ID:</b> {course.id}</div>
                 <div><b>Credits:</b> {course.credits}</div>
+                <div><b>Difficulty:</b> {course.difficulty ?? "N/A"}</div>
                 <div><b>Category:</b> {course.category}</div>
                 <div style={{ marginTop: 6 }}>
                   <b>Tags:</b>{" "}
-                  {course.tags?.map((tag) => (
+                  {course.tags?.map(tag => (
                     <span
                       key={tag}
                       style={{
@@ -104,7 +161,7 @@ export default function CourseList() {
                         padding: "2px 6px",
                         borderRadius: 6,
                         marginRight: 4,
-                        fontSize: 12,
+                        fontSize: 12
                       }}
                     >
                       {tag}
@@ -126,7 +183,7 @@ export default function CourseList() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
+                    cursor: "pointer"
                   }}
                   onClick={() => alert(`Added ${course.name}`)}
                 >
