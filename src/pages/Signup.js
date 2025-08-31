@@ -10,7 +10,7 @@ import { seedCourses } from "../utils/seedCourses";
 const allTags = Array.from(new Set(seedCourses.flatMap(c => c.tags || [])));
 
 export default function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", programId: "prog_se_diploma", year: 1, maxSemCredits: 36, interests: [] });
+  const [form, setForm] = useState({ name: "", email: "", password: "", programId: "prog_se_diploma", year: 1, maxSemCredits: 45, interests: [] });
   const nav = useNavigate();
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
