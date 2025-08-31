@@ -26,7 +26,7 @@ export default function NavBar() {
 
   return (
     <Nav>
-      <NavLink to="/">
+      <NavLink to="/dashboard">
         <img src={Logo} alt="logo" />
       </NavLink>
       <Bars />
