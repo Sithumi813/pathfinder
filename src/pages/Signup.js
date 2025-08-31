@@ -1,4 +1,3 @@
-// src/pages/Signup.js
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
@@ -6,10 +5,8 @@ import { setDoc, doc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import { seedCourses } from "../utils/seedCourses";
 
-// collect unique tags from seedCourses
 const allTags = Array.from(new Set(seedCourses.flatMap(c => c.tags || [])));
 
-// year → max credits mapping
 const yearCredits = {
   1: 45,
   2: 48,
@@ -113,7 +110,6 @@ export default function Signup() {
           <option value={4}>Year 4</option>
         </select>
 
-        {/* Auto-updated credits field */}
         <input
           name="maxSemCredits"
           placeholder="Max semester credits"
