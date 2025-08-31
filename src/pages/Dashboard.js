@@ -123,8 +123,8 @@ export default function Dashboard() {
                   }}
                 >
                   {completedCoursesSet.has(course.id)
-                    ? "✅ Completed"
-                    : "Mark Complete"}
+                    ? "Completed"
+                    : "Not Completed"}
                 </button>
               </div>
             ))}
