@@ -8,17 +8,19 @@ import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function CourseList() {
-  const { student } = useStudent();
+  const { student, loading } = useStudent();
   const [filter, setFilter] = useState("ALL");
   const [sortType, setSortType] = useState("NONE");
   const [searchQuery, setSearchQuery] = useState("");
   const [displayCourses, setDisplayCourses] = useState([]);
 
   useEffect(() => {
-    if (!student) return;
+    if (!student || !student.year) return;
 
-    const studentYearStr = `Year 0${student.year}`;
-    let courses = seedCourses.filter(c => c.category === "SKILL" || c.year === studentYearStr);
+    // Show SKILL + all courses for that year 
+    let courses = seedCourses.filter(c =>
+      c.category === "SKILL" || c.year === `Year 0${student.year}`
+    );
 
     if (filter !== "ALL") courses = courses.filter(c => c.category === filter);
 
@@ -34,8 +36,8 @@ export default function CourseList() {
     else if (sortType === "DIFFICULTY") courses.sort((a, b) => b.difficulty - a.difficulty);
     else {
       courses.sort((a, b) => {
-        const aMatch = a.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
-        const bMatch = b.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
+        const aMatch = a.tags?.some(tag => student.interests?.includes(tag)) ? 1 : 0;
+        const bMatch = b.tags?.some(tag => student.interests?.includes(tag)) ? 1 : 0;
         return bMatch - aMatch;
       });
     }
@@ -43,7 +45,11 @@ export default function CourseList() {
     setDisplayCourses(courses);
   }, [student, filter, sortType, searchQuery]);
 
-  const enrollCourse = async course => {
+  const enrollCourse = async (course) => {
+    if (!student?.uid) {
+      alert("Please log in to enroll.");
+      return;
+    }
     try {
       await updateDoc(doc(db, "users", student.uid), {
         enrolledCourses: arrayUnion(course.id)
@@ -54,6 +60,9 @@ export default function CourseList() {
       alert("Failed to enroll");
     }
   };
+
+  if (loading) return <div>Loading student profile...</div>;
+  if (!student?.year) return <div>No student data found. Please update your profile.</div>;
 
   return (
     <div>
