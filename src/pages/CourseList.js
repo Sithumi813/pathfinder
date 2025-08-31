@@ -16,8 +16,7 @@ export default function CourseList() {
 
   useEffect(() => {
     if (!student || !student.year) return;
-
-    // Show SKILL + all courses for that year 
+     
     let courses = seedCourses.filter(c =>
       c.category === "SKILL" || c.year === `Year 0${student.year}`
     );
@@ -70,7 +69,6 @@ export default function CourseList() {
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 12 }}>
         <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Available Courses</h2>
 
-        {/* Search + Filters */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             value={searchQuery}
@@ -92,7 +90,7 @@ export default function CourseList() {
           </select>
         </div>
 
-        {/* Courses Grid */}
+        
         <div
           style={{
             display: "grid",
@@ -140,8 +138,7 @@ export default function CourseList() {
                   ))}
                 </div>
               </div>
-
-              {/* Enroll Button */}
+              
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                 <button
                   style={{

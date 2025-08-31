@@ -1,4 +1,3 @@
-// src/pages/Recommendations.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { db } from "../firebase";
@@ -6,9 +5,7 @@ import { collection, getDocs, doc, updateDoc, getDoc } from "firebase/firestore"
 import { useAuth } from "../utils/AuthProvider";
 import { seedCourses } from "../utils/seedCourses";
 
-// ---- Utility Functions ----
 
-// Credit gap logic
 function getCreditGap(year) {
   const limits = {
     1: { mandatory: 34, required: 45 },
@@ -20,7 +17,6 @@ function getCreditGap(year) {
   return required - mandatory;
 }
 
-// Topological sort to order courses by prerequisites
 function topoSort(courses, completedIds) {
   const graph = {};
   const indegree = {};
@@ -32,7 +28,6 @@ function topoSort(courses, completedIds) {
     idToCourse[c.id] = c;
   });
 
-  // Queue with all courses whose prereqs are already satisfied
   const queue = [];
   for (let c of courses) {
     if (indegree[c.id] === 0 || (c.prerequisites || []).every((p) => completedIds.includes(p))) {
@@ -49,7 +44,6 @@ function topoSort(courses, completedIds) {
     visited.add(curr);
     order.push(idToCourse[curr]);
 
-    // reduce indegree of dependents
     for (let next of courses) {
       if (next.prerequisites?.includes(curr)) {
         indegree[next.id] -= 1;
@@ -61,7 +55,6 @@ function topoSort(courses, completedIds) {
   return order;
 }
 
-// Heap-based elective/skill filler
 function recommendWithHeap(courses, profile, mode = "POPULARITY") {
   const gap = getCreditGap(profile.year);
   const electives = courses.filter(
@@ -90,7 +83,7 @@ export default function Recommendations() {
   const [profile, setProfile] = useState(null);
   const [allCourses, setAllCourses] = useState([]);
   const [result, setResult] = useState(null);
-  const [algo, setAlgo] = useState("GRAPH"); // GRAPH | HEAP_POP | HEAP_DIFF | HEAP_MIN
+  const [algo, setAlgo] = useState("GRAPH"); 
 
   useEffect(() => {
     (async () => {
@@ -116,7 +109,6 @@ export default function Recommendations() {
 
     let res;
     if (algo === "GRAPH") {
-      // Generate course path based on prerequisites
       const order = topoSort(enrolled, completedIds);
       res = { plan: order, selectedIds: order.map((c) => c.id) };
     } else if (algo === "HEAP_POP") {

@@ -1,8 +1,7 @@
-// src/pages/Calendar.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../utils/AuthProvider";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+//import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function CalendarPage() {

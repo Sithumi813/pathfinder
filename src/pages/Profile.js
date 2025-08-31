@@ -5,7 +5,6 @@ import { useAuth } from "../utils/AuthProvider";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
-// Collect unique tags from seedCourses
 const allTags = Array.from(new Set(seedCourses.flatMap(c => c.tags || [])));
 
 export default function Profile() {
@@ -18,7 +17,6 @@ export default function Profile() {
     interests: []
   });
 
-  // Load profile from Firestore
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -37,7 +35,6 @@ export default function Profile() {
     })();
   }, [user]);
 
-  // Toggle checkbox for interests
   const toggleInterest = (tag) => {
     setForm(prev => ({
       ...prev,
@@ -47,7 +44,6 @@ export default function Profile() {
     }));
   };
 
-  // Save profile
   const handleSave = async () => {
     const ref = doc(db, "users", user.uid);
     await updateDoc(ref, {
@@ -57,12 +53,9 @@ export default function Profile() {
       interests: form.interests
     });
 
-    // Optional: trigger course list refresh globally
     window.dispatchEvent(new Event("coursesUpdated"));
 
-    alert("Profile updated!");
-    //window.location.reload();  // <-- reload entire app
-  };
+    alert("Profile updated!");};
 
   if (loading) return <div>Loading...</div>;
 

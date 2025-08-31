@@ -8,8 +8,7 @@ import { seedCourses } from "../utils/seedCourses";
 export default function Dashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
-
-  // Yearly required credits mapping
+  
   const yearCredits = {
     1: 45,
     2: 48,
@@ -40,7 +39,6 @@ export default function Dashboard() {
     .map((id) => seedCourses.find((c) => c.id === id))
     .filter(Boolean);
 
-  // Move course from enrolled -> completed
   const toggleComplete = async (courseId) => {
     const updatedEnrolled = profile.enrolledCourses.filter((c) => c !== courseId);
     const updatedCompleted = [...(profile.completedCourses || []), courseId];
@@ -57,7 +55,6 @@ export default function Dashboard() {
     }));
   };
 
-  // Enroll course from recommended plan
   const enrollCourse = async (courseId) => {
     if (
       (profile.enrolledCourses || []).includes(courseId) ||
@@ -82,7 +79,6 @@ export default function Dashboard() {
     }));
   };
 
-  // Remove course from enrolled and add back to plan
   const removeEnrollment = async (courseId) => {
     const updatedEnrolled = profile.enrolledCourses.filter((c) => c !== courseId);
     const updatedPlan = [...(profile.currentPlan || []), courseId];
@@ -108,7 +104,6 @@ export default function Dashboard() {
       <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>
         <h1 style={{ marginBottom: 20, color: "#45096fff" }}>Welcome, {profile.name}</h1>
 
-        {/* Credits Card */}
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
           <div
             style={{
@@ -125,7 +120,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Enrolled Courses */}
+
         <section style={{ marginTop: 20 }}>
           <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Enrolled Courses</h2>
           <div
@@ -185,7 +180,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Current Recommended Plan */}
         <section style={{ marginTop: 40 }}>
           <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Current Recommended Plan</h2>
           {currentPlanCourses.length ? (
@@ -234,7 +228,6 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Completed Courses */}
         <section style={{ marginTop: 40 }}>
           <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Completed Courses</h2>
           {completedCourses.length ? (
