@@ -4,12 +4,25 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
+import { seedCourses } from "../utils/seedCourses";
+
+// collect unique tags from seedCourses
+const allTags = Array.from(new Set(seedCourses.flatMap(c => c.tags || [])));
 
 export default function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", programId: "prog_se_diploma", year: 1, maxSemCredits: 36, interests: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", programId: "prog_se_diploma", year: 1, maxSemCredits: 36, interests: [] });
   const nav = useNavigate();
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const toggleInterest = (tag) => {
+    setForm(prev => ({
+      ...prev,
+      interests: prev.interests.includes(tag)
+        ? prev.interests.filter(i => i !== tag)
+        : [...prev.interests, tag]
+    }));
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -21,7 +34,7 @@ export default function Signup() {
         programId: form.programId,
         year: Number(form.year),
         maxSemCredits: Number(form.maxSemCredits),
-        interests: form.interests ? form.interests.split(",").map(s => s.trim()) : [],
+        interests: form.interests,
         completedCourses: [],
         currentPlan: [],
         enrolledCourses: []
@@ -42,18 +55,21 @@ export default function Signup() {
         border: "1px solid #45096fff",
         fontSize: "14px"
       }} required />
+
         <input name="email" type="email" placeholder="Email" value={form.email} onChange={onChange} style={{
         padding: "12px",
         borderRadius: "8px",
         border: "1px solid #45096fff",
         fontSize: "14px"
       }} required />
+
         <input name="password" type="password" placeholder="Password" value={form.password} onChange={onChange} style={{
         padding: "12px",
         borderRadius: "8px",
         border: "1px solid #45096fff",
         fontSize: "14px"
       }} required />
+
         <select name="year" value={form.year} onChange={onChange} style={{
         padding: "12px",
         borderRadius: "8px",
@@ -62,13 +78,29 @@ export default function Signup() {
       }}>
           <option value={1}>Year 1</option><option value={2}>Year 2</option><option value={3}>Year 3</option><option value={4}>Year 4</option>
         </select>
+
         <input name="maxSemCredits" placeholder="Max semester credits" value={form.maxSemCredits} onChange={onChange} style={{
         padding: "12px",
         borderRadius: "8px",
         border: "1px solid #45096fff",
         fontSize: "14px"
       }}/>
-        <input name="interests" placeholder="Interests (comma separated, e.g., AI,Web)" value={form.interests} onChange={onChange}/>
+
+      <div>
+          <h4 style={{ marginBottom: "15px" }}>Select Interests:</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
+            {allTags.map(tag => (
+              <label key={tag} style={{ fontSize: "14px" }}>
+                <input
+                  type="checkbox"
+                  checked={form.interests.includes(tag)}
+                  onChange={() => toggleInterest(tag)}
+                /> {tag}
+              </label>
+            ))}
+          </div>
+        </div>
+        
         <button type="submit"style={{
             padding: "12px",
             borderRadius: "8px",
