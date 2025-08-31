@@ -33,43 +33,63 @@ export default function Login() {
   );
 }*/
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+// src/pages/Login.js
+import React, { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+import { useNavigate, Link } from "react-router-dom";
 
-// ✅ Your Firebase config (replace with your real values from Firebase Console)
-const firebaseConfig = {
-  apiKey: "AIzaSyC5l7RQFLJ1IVEETIGAg76IF2KLQWpmuzM",
-  authDomain: "pathfinder-24200.firebaseapp.com",
-  projectId: "pathfinder-24200",
-  storageBucket: "pathfinder-24200.firebasestorage.app",
-  messagingSenderId: "575551396955",
-  appId: "1:575551396955:web:58475a8c8084c2af93737e",
-  measurementId: "G-3HF2CWW4YX"
-};
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const nav = useNavigate();
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+  const onChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-// DOM Elements
-const form = document.getElementById("loginForm");
-const messageBox = document.getElementById("message");
+  const submit = async (e) => {
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, form.email, form.password);
+      nav("/dashboard");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
-// Handle form submit
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+  return (
+    <div className="container d-flex justify-content-center align-items-center min-vh-100">
+      <div className="card shadow p-4" style={{ width: "400px" }}>
+        <h3 className="text-center mb-3">Login to PathFinder</h3>
+        <form onSubmit={submit}>
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+            <input
+              name="email"
+              type="email"
+              className="form-control"
+              value={form.email}
+              onChange={onChange}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input
+              name="password"
+              type="password"
+              className="form-control"
+              value={form.password}
+              onChange={onChange}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary w-100">Login</button>
+        </form>
+        <div className="text-center mt-3">
+          Don’t have an account? <Link to="/signup">Sign up</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    // ✅ Redirect after successful login
-    window.location.href = "dashboard.html";
-  } catch (err) {
-    messageBox.style.display = "block";
-    messageBox.className = "alert alert-danger";
-    messageBox.innerText = err.message;
-  }
-});
 
