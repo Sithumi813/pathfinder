@@ -1,153 +1,45 @@
-// src/pages/CourseList.js
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import NavBar from "../components/NavBar";
-import { seedCourses } from "../utils/seedCourses"; // using static data instead of Firestore
-import { Plus } from "lucide-react";
-import { motion } from "framer-motion";
-import { useAuth } from "../utils/AuthProvider";
+import { useStudent } from "../context/StudentContext";
 
-export default function CourseList() {
-  const { user } = useAuth(); // get the logged-in user including year and interests
-  const [courses, setCourses] = useState([]);
-  const [q, setQ] = useState("");
-  const [filter, setFilter] = useState("ALL");
-  const [sortBy, setSortBy] = useState("NONE");
+export default function Profile() {
+  const { student, updateProfile } = useStudent();
+  const [name, setName] = useState(student.name);
+  const [year, setYear] = useState(student.year);
+  const [interests, setInterests] = useState(student.interests.join(", "));
 
-  useEffect(() => {
-    // Load static seed data
-    setCourses(seedCourses);
-  }, []);
-
-  // Filter courses based on user's year and global skill courses
-  const filtered = courses
-    .filter((c) => {
-      if (c.category !== "SKILL" && c.year !== user.year) return false; // only show user's year for mandatory/elective
-      if (filter !== "ALL" && c.category !== filter) return false; // apply category filter
-      const term = q.trim().toLowerCase();
-      if (!term) return true;
-      return c.name.toLowerCase().includes(term) || c.id.toLowerCase().includes(term);
-    })
-    .sort((a, b) => {
-      if (sortBy === "POPULARITY") return b.popularity - a.popularity;
-      if (sortBy === "DIFFICULTY") return b.difficulty - a.difficulty;
-      if (sortBy === "NONE") {
-        // sort by user's interests: courses with matching tags first
-        const aScore = a.tags.filter((t) => user.interests.includes(t)).length;
-        const bScore = b.tags.filter((t) => user.interests.includes(t)).length;
-        return bScore - aScore;
-      }
-      return 0;
-    });
+  const handleSave = () => {
+    const updatedData = {
+      name,
+      year,
+      interests: interests.split(",").map(i => i.trim())
+    };
+    updateProfile(updatedData);
+    alert("Profile updated!");
+  };
 
   return (
-    <>
+    <div>
       <NavBar />
-      <div style={{ maxWidth: 1200, margin: "24px auto", padding: 12 }}>
-        <h2 style={{ marginBottom: "20px", color: "#45096fff" }}>Available Courses</h2>
+      <h1>Profile</h1>
 
-        {/* Filters + Sorting */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by name or id"
-            style={{ flex: 1, padding: 8 }}
-          />
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="ALL">All</option>
-            <option value="MANDATORY">Mandatory</option>
-            <option value="ELECTIVE">Elective</option>
-            <option value="SKILL">Skill</option>
-          </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="NONE">Sort By</option>
-            <option value="POPULARITY">Popularity</option>
-            <option value="DIFFICULTY">Difficulty</option>
-          </select>
-        </div>
+      <div>
+        <label>Name: </label>
+        <input value={name} onChange={e => setName(e.target.value)} />
 
-        {/* Courses Grid */}
-        <div
-          style={{
-            display: "grid",
-            gap: 16,
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          }}
-        >
-          {filtered.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              style={{
-                padding: 16,
-                background: "#fff",
-                borderRadius: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
-                  {c.name}
-                </div>
-                <div><b>ID:</b> {c.id}</div>
-                <div><b>Credits:</b> {c.credits}</div>
-                <div>
-                  <b>Prereqs:</b> {c.prereqs.length > 0 ? c.prereqs.join(", ") : "None"}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}>
-                  <b>Description:</b> {c.description}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}>
-                  <b>Relevance:</b> {c.relevance}
-                </div>
-                <div style={{ marginTop: 6 }}>
-                  <b>Tags:</b>{" "}
-                  {c.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        background: "#f0f0f0",
-                        padding: "2px 6px",
-                        borderRadius: 6,
-                        marginRight: 4,
-                        fontSize: 12,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
+        <label>Year: </label>
+        <select value={year} onChange={e => setYear(e.target.value)}>
+          <option value="Year 01">Year 01</option>
+          <option value="Year 02">Year 02</option>
+          <option value="Year 03">Year 03</option>
+          <option value="Year 04">Year 04</option>
+        </select>
 
-              {/* Bottom Right Plus Button */}
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-                <button
-                  style={{
-                    background: "#45096fff",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: 36,
-                    height: 36,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => alert(`Added ${c.name}`)}
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        <label>Interests (comma-separated): </label>
+        <input value={interests} onChange={e => setInterests(e.target.value)} />
+
+        <button onClick={handleSave}>Save</button>
       </div>
-    </>
+    </div>
   );
 }

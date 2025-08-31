@@ -1,74 +1,79 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import NavBar from "../components/NavBar";
 import { seedCourses } from "../utils/seedCourses"; 
-import { Plus } from "lucide-react"; 
-import { motion } from "framer-motion";
 import { useStudent } from "../context/StudentContext";
+import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function CourseList() {
   const { student } = useStudent();
-  const [courses, setCourses] = useState([]);
-  const [q, setQ] = useState("");
-  const [filter, setFilter] = useState("ALL");
-  const [sortBy, setSortBy] = useState("NONE");
+  const [filter, setFilter] = useState("ALL"); // ALL, MANDATORY, ELECTIVE, SKILL
+  const [sortType, setSortType] = useState("NONE"); // NONE, CREDIT, POPULARITY
+  const [displayCourses, setDisplayCourses] = useState([]);
 
   useEffect(() => {
-    setCourses(seedCourses);
-  }, []);
+    // Filter courses by student's year + global skill courses
+    let courses = seedCourses.filter(course =>
+      course.category === "SKILL" || course.year === student.year
+    );
 
-  const filtered = courses
-    .filter((c) => {
-      // Show skill courses for all years, others only for student's year
-      if (c.category !== "SKILL" && c.year !== student.year) return false;
+    // Apply category filter
+    if (filter !== "ALL") {
+      courses = courses.filter(course => course.category === filter);
+    }
 
-      // Apply filter dropdown
-      if (filter !== "ALL" && c.category !== filter) return false;
+    // Apply sorting
+    if (sortType === "CREDIT") {
+      courses.sort((a, b) => a.credits - b.credits);
+    } else if (sortType === "POPULARITY") {
+      courses.sort((a, b) => b.popularity - a.popularity);
+    } else if (sortType === "NONE") {
+      // Sort by interests
+      courses.sort((a, b) => {
+        const aMatch = a.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
+        const bMatch = b.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
+        return bMatch - aMatch; // courses matching interests first
+      });
+    }
 
-      const term = q.trim().toLowerCase();
-      if (!term) return true;
-
-      return c.name.toLowerCase().includes(term) || c.id.toLowerCase().includes(term);
-    })
-    .sort((a, b) => {
-      if (sortBy === "POPULARITY") return b.popularity - a.popularity;
-      if (sortBy === "DIFFICULTY") return b.difficulty - a.difficulty;
-
-      // Default: order by student interests matching course tags
-      const aMatch = a.tags.filter(tag => student.interests.includes(tag)).length;
-      const bMatch = b.tags.filter(tag => student.interests.includes(tag)).length;
-      return bMatch - aMatch;
-    });
+    setDisplayCourses(courses);
+  }, [student, filter, sortType]);
 
   return (
-    <>
+    <div>
       <NavBar />
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 12 }}>
         <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Available Courses</h2>
 
+        {/* Filters */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by name or id"
-            style={{ flex: 1, padding: 8 }}
-          />
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <label>Filter:</label>
+          <select onChange={(e) => setFilter(e.target.value)} value={filter}>
             <option value="ALL">All</option>
             <option value="MANDATORY">Mandatory</option>
             <option value="ELECTIVE">Elective</option>
             <option value="SKILL">Skill</option>
           </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="NONE">Sort By</option>
+
+          <label>Sort:</label>
+          <select onChange={(e) => setSortType(e.target.value)} value={sortType}>
+            <option value="NONE">By Interests</option>
+            <option value="CREDIT">Credits</option>
             <option value="POPULARITY">Popularity</option>
-            <option value="DIFFICULTY">Difficulty</option>
           </select>
         </div>
 
-        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-          {filtered.map((c) => (
+        {/* Courses Grid */}
+        <div
+          style={{
+            display: "grid",
+            gap: 16,
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          }}
+        >
+          {displayCourses.map((course) => (
             <motion.div
-              key={c.id}
+              key={course.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -83,22 +88,32 @@ export default function CourseList() {
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>{c.name}</div>
-                <div><b>ID:</b> {c.id}</div>
-                <div><b>Credits:</b> {c.credits}</div>
-                <div><b>Prereqs:</b> {c.prereqs.length > 0 ? c.prereqs.join(", ") : "None"}</div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}><b>Description:</b> {c.description}</div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}><b>Relevance:</b> {c.relevance}</div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
+                  {course.name}
+                </div>
+                <div><b>ID:</b> {course.id}</div>
+                <div><b>Credits:</b> {course.credits}</div>
+                <div><b>Category:</b> {course.category}</div>
                 <div style={{ marginTop: 6 }}>
                   <b>Tags:</b>{" "}
-                  {c.tags.map((tag) => (
-                    <span key={tag} style={{ background: "#f0f0f0", padding: "2px 6px", borderRadius: 6, marginRight: 4, fontSize: 12 }}>
+                  {course.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        background: "#f0f0f0",
+                        padding: "2px 6px",
+                        borderRadius: 6,
+                        marginRight: 4,
+                        fontSize: 12,
+                      }}
+                    >
                       {tag}
                     </span>
                   ))}
                 </div>
               </div>
 
+              {/* Add Button */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                 <button
                   style={{
@@ -113,7 +128,7 @@ export default function CourseList() {
                     justifyContent: "center",
                     cursor: "pointer",
                   }}
-                  onClick={() => alert(`Added ${c.name}`)}
+                  onClick={() => alert(`Added ${course.name}`)}
                 >
                   <Plus size={18} />
                 </button>
@@ -122,12 +137,6 @@ export default function CourseList() {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
-import React, { useEffect, useState } from "react";
-import NavBar from "../components/NavBar";
-import { seedCourses } from "../utils/seedCourses"; 
-import { Plus } from "lucide-react"; 
-import { motion } from "framer-motion";
-import { useStudent } from "../context/StudentContext";
