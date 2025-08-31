@@ -59,8 +59,8 @@ export default function Dashboard() {
   return (
     <>
       <NavBar />
-      <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>
-        <h1>Welcome, {profile.name}</h1>
+      <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>        
+        <h1 style={{ marginBottom: 20, color: "#45096fff" }}>Welcome, {profile.name}</h1>
 
         {/* Credits Card */}
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
@@ -81,7 +81,7 @@ export default function Dashboard() {
 
         {/* Enrolled Courses */}
         <section style={{ marginTop: 20 }}>
-          <h3>Enrolled Courses</h3>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Enrolled Courses</h2>
           <div
             style={{
               display: "grid",
