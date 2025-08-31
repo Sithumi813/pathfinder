@@ -1,14 +1,13 @@
-// src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { auth, db } from "../firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "../utils/AuthProvider";
+import { seedCourses } from "../utils/seedCourses";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
-  const [mandatoryPending, setMandatoryPending] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -16,20 +15,36 @@ export default function Dashboard() {
       const udoc = await getDoc(doc(db, "users", user.uid));
       const pdata = udoc.data();
       setProfile(pdata);
-
-      // fetch program mandatory requirements
-      // For simplicity, we query courses with category MANDATORY and filter completed
-      const csnap = await getDocs(query(collection(db, "courses"), where("category", "==", "MANDATORY")));
-      const missing = [];
-      csnap.forEach(d => {
-        const c = { id: d.id, ...d.data() };
-        if (!(pdata.completedCourses || []).includes(c.id)) missing.push(c);
-      });
-      setMandatoryPending(missing);
     })();
   }, [user]);
 
   if (!user || !profile) return <div>Loading...</div>;
+
+  const enrolledCourses = (profile.enrolledCourses || []).map(id =>
+    seedCourses.find(c => c.id === id)
+  ).filter(Boolean);
+
+  const completedCoursesSet = new Set(profile.completedCourses || []);
+
+  const toggleComplete = async courseId => {
+    const isCompleted = completedCoursesSet.has(courseId);
+    const updatedCourses = isCompleted
+      ? profile.completedCourses.filter(c => c !== courseId)
+      : [...(profile.completedCourses || []), courseId];
+
+    await updateDoc(doc(db, "users", user.uid), {
+      completedCourses: updatedCourses
+    });
+
+    setProfile(prev => ({
+      ...prev,
+      completedCourses: updatedCourses
+    }));
+  };
+
+  const totalCredits = enrolledCourses.reduce((sum, c) => {
+    return sum + (completedCoursesSet.has(c.id) ? c.credits : 0);
+  }, 0);
 
   return (
     <>
@@ -39,25 +54,31 @@ export default function Dashboard() {
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
           <div style={{ flex: 1, padding: 12, background: "#fff", borderRadius: 6 }}>
             <div style={{ color: "#666" }}>Credits Completed</div>
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{(profile.completedCourses || []).length * 3 /* placeholder */}</div>
-          </div>
-          <div style={{ flex: 1, padding: 12, background: "#fff", borderRadius: 6 }}>
-            <div style={{ color: "#666" }}>Mandatory Pending</div>
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{mandatoryPending.length}</div>
-          </div>
-          <div style={{ flex: 1, padding: 12, background: "#fff", borderRadius: 6 }}>
-            <div style={{ color: "#666" }}>Semester Capacity</div>
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{profile.maxSemCredits}</div>
+            <div style={{ fontSize: 22, fontWeight: 600 }}>{totalCredits}</div>
           </div>
         </div>
 
         <section style={{ marginTop: 20 }}>
-          <h3>Pending mandatory courses</h3>
-          <div style={{ display: "grid", gap: 8 }}>
-            {mandatoryPending.map(c => (
-              <div key={c.id} style={{ padding: 12, background: "#fff", borderRadius: 6 }}>
-                <div style={{ fontWeight: 600 }}>{c.name} <span style={{ color: "#666", fontSize: 12 }}>({c.credits} cr)</span></div>
-                <div style={{ color: "#666", fontSize: 13 }}>{c.relevance}</div>
+          <h3>Enrolled Courses</h3>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
+            {enrolledCourses.map(course => (
+              <div key={course.id} style={{ padding: 12, background: "#fff", borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontWeight: 600 }}>{course.name}</div>
+                <div style={{ color: "#666", fontSize: 12 }}>{course.category}</div>
+                <button
+                  onClick={() => toggleComplete(course.id)}
+                  style={{
+                    marginTop: 6,
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    border: "none",
+                    background: completedCoursesSet.has(course.id) ? "green" : "#ccc",
+                    color: "#fff",
+                    cursor: "pointer"
+                  }}
+                >
+                  {completedCoursesSet.has(course.id) ? "✅ Completed" : "Mark Complete"}
+                </button>
               </div>
             ))}
           </div>

@@ -4,64 +4,38 @@ import { seedCourses } from "../utils/seedCourses";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStudent } from "../context/StudentContext";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function CourseList() {
-  const { student, loading } = useStudent();
-  const [filter, setFilter] = useState("ALL"); // ALL, MANDATORY, ELECTIVE, SKILL
-  const [sortType, setSortType] = useState("NONE"); // NONE, CREDIT, POPULARITY, DIFFICULTY
+  const { student } = useStudent();
+  const [filter, setFilter] = useState("ALL");
+  const [sortType, setSortType] = useState("NONE");
   const [searchQuery, setSearchQuery] = useState("");
   const [displayCourses, setDisplayCourses] = useState([]);
 
   useEffect(() => {
-    if (!student) {
-      setDisplayCourses([]);
-      return;
-    }
+    if (!student) return;
 
-    // Convert student.year to string format "Year XX"
     const studentYearStr = `Year 0${student.year}`;
+    let courses = seedCourses.filter(c => c.category === "SKILL" || c.year === studentYearStr);
 
-    let courses = seedCourses.filter(c => {
-      // SKILL courses are for all years
-      if (c.category === "SKILL") return true;
+    if (filter !== "ALL") courses = courses.filter(c => c.category === filter);
 
-      // Match student's year
-      if (c.year === studentYearStr) return true;
-
-      return false;
-    });
-
-    // Apply category filter
-    if (filter !== "ALL") {
-      courses = courses.filter(c => c.category === filter);
-    }
-
-    // Apply search
     const term = searchQuery.trim().toLowerCase();
     if (term) {
-      courses = courses.filter(
-        c =>
-          c.name.toLowerCase().includes(term) ||
-          c.id.toLowerCase().includes(term)
+      courses = courses.filter(c =>
+        c.name.toLowerCase().includes(term) || c.id.toLowerCase().includes(term)
       );
     }
 
-    // Apply sorting
-    if (sortType === "CREDIT") {
-      courses.sort((a, b) => a.credits - b.credits);
-    } else if (sortType === "POPULARITY") {
-      courses.sort((a, b) => b.popularity - a.popularity);
-    } else if (sortType === "DIFFICULTY") {
-      courses.sort((a, b) => b.difficulty - a.difficulty);
-    } else {
-      // Default: sort by interest match
+    if (sortType === "CREDIT") courses.sort((a, b) => a.credits - b.credits);
+    else if (sortType === "POPULARITY") courses.sort((a, b) => b.popularity - a.popularity);
+    else if (sortType === "DIFFICULTY") courses.sort((a, b) => b.difficulty - a.difficulty);
+    else {
       courses.sort((a, b) => {
-        const aMatch = a.tags?.some(tag => student.interests.includes(tag))
-          ? 1
-          : 0;
-        const bMatch = b.tags?.some(tag => student.interests.includes(tag))
-          ? 1
-          : 0;
+        const aMatch = a.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
+        const bMatch = b.tags?.some(tag => student.interests.includes(tag)) ? 1 : 0;
         return bMatch - aMatch;
       });
     }
@@ -69,27 +43,17 @@ export default function CourseList() {
     setDisplayCourses(courses);
   }, [student, filter, sortType, searchQuery]);
 
-  if (loading) {
-    return (
-      <div>
-        <NavBar />
-        <p style={{ textAlign: "center", marginTop: 20 }}>
-          Loading student profile...
-        </p>
-      </div>
-    );
-  }
-
-  if (!student) {
-    return (
-      <div>
-        <NavBar />
-        <p style={{ textAlign: "center", marginTop: 20 }}>
-          No student data found. Please update your profile.
-        </p>
-      </div>
-    );
-  }
+  const enrollCourse = async course => {
+    try {
+      await updateDoc(doc(db, "users", student.uid), {
+        enrolledCourses: arrayUnion(course.id)
+      });
+      alert(`Enrolled in ${course.name}`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to enroll");
+    }
+  };
 
   return (
     <div>
@@ -144,9 +108,7 @@ export default function CourseList() {
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
-                  {course.name}
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>{course.name}</div>
                 <div><b>ID:</b> {course.id}</div>
                 <div><b>Credits:</b> {course.credits}</div>
                 <div><b>Difficulty:</b> {course.difficulty ?? "N/A"}</div>
@@ -170,7 +132,7 @@ export default function CourseList() {
                 </div>
               </div>
 
-              {/* Add Button */}
+              {/* Enroll Button */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                 <button
                   style={{
@@ -185,7 +147,7 @@ export default function CourseList() {
                     justifyContent: "center",
                     cursor: "pointer"
                   }}
-                  onClick={() => alert(`Added ${course.name}`)}
+                  onClick={() => enrollCourse(course)}
                 >
                   <Plus size={18} />
                 </button>
