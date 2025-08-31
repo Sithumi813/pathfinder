@@ -1,45 +1,50 @@
-// src/pages/CourseList.js
-// src/pages/CourseList.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
-import { seedCourses } from "../utils/seedCourses"; // using static data instead of Firestore
-import { Plus } from "lucide-react"; // nice plus icon
+import { seedCourses } from "../utils/seedCourses"; 
+import { Plus } from "lucide-react"; 
 import { motion } from "framer-motion";
+import { useStudent } from "../context/StudentContext";
 
 export default function CourseList() {
+  const { student } = useStudent();
   const [courses, setCourses] = useState([]);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("NONE");
 
   useEffect(() => {
-    // Load static seed data
     setCourses(seedCourses);
   }, []);
 
   const filtered = courses
     .filter((c) => {
+      // Show skill courses for all years, others only for student's year
+      if (c.category !== "SKILL" && c.year !== student.year) return false;
+
+      // Apply filter dropdown
       if (filter !== "ALL" && c.category !== filter) return false;
+
       const term = q.trim().toLowerCase();
       if (!term) return true;
-      return (
-        c.name.toLowerCase().includes(term) ||
-        c.id.toLowerCase().includes(term)
-      );
+
+      return c.name.toLowerCase().includes(term) || c.id.toLowerCase().includes(term);
     })
     .sort((a, b) => {
       if (sortBy === "POPULARITY") return b.popularity - a.popularity;
       if (sortBy === "DIFFICULTY") return b.difficulty - a.difficulty;
-      return 0;
+
+      // Default: order by student interests matching course tags
+      const aMatch = a.tags.filter(tag => student.interests.includes(tag)).length;
+      const bMatch = b.tags.filter(tag => student.interests.includes(tag)).length;
+      return bMatch - aMatch;
     });
 
   return (
     <>
       <NavBar />
       <div style={{ maxWidth: 1200, margin: "24px auto", padding: 12 }}>
-        <h2 style={{ marginBottom: 12, marginBottom: "20px", color: "#45096fff" }}>Available Courses</h2>
+        <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Available Courses</h2>
 
-        {/* Filters + Sorting */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <input
             value={q}
@@ -60,14 +65,7 @@ export default function CourseList() {
           </select>
         </div>
 
-        {/* Courses Grid */}
-        <div
-          style={{
-            display: "grid",
-            gap: 16,
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          }}
-        >
+        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
           {filtered.map((c) => (
             <motion.div
               key={c.id}
@@ -85,41 +83,22 @@ export default function CourseList() {
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
-                  {c.name}
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>{c.name}</div>
                 <div><b>ID:</b> {c.id}</div>
                 <div><b>Credits:</b> {c.credits}</div>
-                <div>
-                  <b>Prereqs:</b>{" "}
-                  {c.prereqs.length > 0 ? c.prereqs.join(", ") : "None"}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}>
-                  <b>Description:</b> {c.description}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}>
-                  <b>Relevance:</b> {c.relevance}
-                </div>
+                <div><b>Prereqs:</b> {c.prereqs.length > 0 ? c.prereqs.join(", ") : "None"}</div>
+                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}><b>Description:</b> {c.description}</div>
+                <div style={{ marginTop: 6, fontSize: 14, color: "#444" }}><b>Relevance:</b> {c.relevance}</div>
                 <div style={{ marginTop: 6 }}>
                   <b>Tags:</b>{" "}
                   {c.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        background: "#f0f0f0",
-                        padding: "2px 6px",
-                        borderRadius: 6,
-                        marginRight: 4,
-                        fontSize: 12,
-                      }}
-                    >
+                    <span key={tag} style={{ background: "#f0f0f0", padding: "2px 6px", borderRadius: 6, marginRight: 4, fontSize: 12 }}>
                       {tag}
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* Bottom Right Plus Button */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                 <button
                   style={{
@@ -146,6 +125,9 @@ export default function CourseList() {
     </>
   );
 }
-
-
-
+import React, { useEffect, useState } from "react";
+import NavBar from "../components/NavBar";
+import { seedCourses } from "../utils/seedCourses"; 
+import { Plus } from "lucide-react"; 
+import { motion } from "framer-motion";
+import { useStudent } from "../context/StudentContext";

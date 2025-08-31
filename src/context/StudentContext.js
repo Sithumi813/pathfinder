@@ -1,0 +1,19 @@
+import React, { createContext, useState, useContext } from "react";
+
+const StudentContext = createContext();
+
+export const useStudent = () => useContext(StudentContext);
+
+export const StudentProvider = ({ children }) => {
+  const [student, setStudent] = useState({
+    name: "John Doe",
+    year: 2,
+    interests: ["AI", "Data Science"], // default interests
+  });
+
+  return (
+    <StudentContext.Provider value={{ student, setStudent }}>
+      {children}
+    </StudentContext.Provider>
+  );
+};
