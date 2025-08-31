@@ -18,7 +18,7 @@ export default function NavBar() {
   return (
     <nav style={{ padding: 12, background: "#fff", borderBottom: "1px solid #eee" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ fontWeight: 700 }}>LearnPath</div>
+        <div style={{ fontWeight: 700 }}>Path Finder</div>
         <div style={{ display: "flex", gap: 12 }}>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/courses">Courses</Link>
