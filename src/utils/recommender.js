@@ -18,20 +18,23 @@ export function prereqsSatisfied(course, completedSet, planSet = new Set()) {
 // scoring function (tune weights)
 function scoreCourse(course, profile, remainingCapacity) {
   let score = 0;
-  // interest match (simple substring)
+
+  // ✅ interest match (tags vs profile.interests)
   if (profile.interests && profile.interests.length > 0) {
-    for (const t of profile.interests) {
-      if (course.name.toLowerCase().includes(t.toLowerCase())) {
-        score += 40;
-        break;
-      }
+    if (course.tags && course.tags.some(tag =>
+      profile.interests.map(i => i.toLowerCase()).includes(tag.toLowerCase())
+    )) {
+      score += 40; // boost if interest-tag match
     }
   }
+
   score += course.popularity || 50; // 0..100
   score += (5 - (course.difficulty || 3)) * 8; // easier gets slight boost
   if (course.credits <= remainingCapacity) score += 10;
+
   return score;
 }
+
 
 // greedy selection (ranked)
 function greedySelect(courses, profile, completedSet, capacity) {
