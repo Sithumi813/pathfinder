@@ -1,4 +1,3 @@
-// src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { db } from "../firebase";
@@ -29,7 +28,6 @@ export default function Dashboard() {
 
   if (!user || !profile) return <div>Loading...</div>;
 
-  // --- Courses from profile ---
   const enrolledCourses = (profile.enrolledCourses || [])
     .map((id) => seedCourses.find((c) => c.id === id))
     .filter(Boolean);
@@ -42,39 +40,73 @@ export default function Dashboard() {
     .map((id) => seedCourses.find((c) => c.id === id))
     .filter(Boolean);
 
-  const completedCoursesSet = new Set(profile.completedCourses || []);
-
-  // --- Mark/unmark completion ---
+  // Move course from enrolled -> completed
   const toggleComplete = async (courseId) => {
-    const isCompleted = completedCoursesSet.has(courseId);
-    const updatedCourses = isCompleted
-      ? profile.completedCourses.filter((c) => c !== courseId)
-      : [...(profile.completedCourses || []), courseId];
+    const updatedEnrolled = profile.enrolledCourses.filter((c) => c !== courseId);
+    const updatedCompleted = [...(profile.completedCourses || []), courseId];
 
     await updateDoc(doc(db, "users", user.uid), {
-      completedCourses: updatedCourses,
+      enrolledCourses: updatedEnrolled,
+      completedCourses: updatedCompleted,
     });
 
     setProfile((prev) => ({
       ...prev,
-      completedCourses: updatedCourses,
+      enrolledCourses: updatedEnrolled,
+      completedCourses: updatedCompleted,
     }));
   };
 
-  // --- Credits ---
-  const totalCredits = enrolledCourses.reduce((sum, c) => {
-    return sum + (completedCoursesSet.has(c.id) ? c.credits : 0);
-  }, 0);
+  // Enroll course from recommended plan
+  const enrollCourse = async (courseId) => {
+    if (
+      (profile.enrolledCourses || []).includes(courseId) ||
+      (profile.completedCourses || []).includes(courseId)
+    ) {
+      alert("Course already enrolled or completed!");
+      return;
+    }
 
+    const updatedEnrolled = [...(profile.enrolledCourses || []), courseId];
+    const updatedPlan = (profile.currentPlan || []).filter((id) => id !== courseId);
+
+    await updateDoc(doc(db, "users", user.uid), {
+      enrolledCourses: updatedEnrolled,
+      currentPlan: updatedPlan,
+    });
+
+    setProfile((prev) => ({
+      ...prev,
+      enrolledCourses: updatedEnrolled,
+      currentPlan: updatedPlan,
+    }));
+  };
+
+  // Remove course from enrolled and add back to plan
+  const removeEnrollment = async (courseId) => {
+    const updatedEnrolled = profile.enrolledCourses.filter((c) => c !== courseId);
+    const updatedPlan = [...(profile.currentPlan || []), courseId];
+
+    await updateDoc(doc(db, "users", user.uid), {
+      enrolledCourses: updatedEnrolled,
+      currentPlan: updatedPlan,
+    });
+
+    setProfile((prev) => ({
+      ...prev,
+      enrolledCourses: updatedEnrolled,
+      currentPlan: updatedPlan,
+    }));
+  };
+
+  const totalCredits = completedCourses.reduce((sum, c) => sum + c.credits, 0);
   const requiredCredits = yearCredits[profile.year] || 0;
 
   return (
     <>
       <NavBar />
       <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>
-        <h1 style={{ marginBottom: 20, color: "#45096fff" }}>
-          Welcome, {profile.name}
-        </h1>
+        <h1 style={{ marginBottom: 20, color: "#45096fff" }}>Welcome, {profile.name}</h1>
 
         {/* Credits Card */}
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
@@ -95,9 +127,7 @@ export default function Dashboard() {
 
         {/* Enrolled Courses */}
         <section style={{ marginTop: 20 }}>
-          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
-            Enrolled Courses
-          </h2>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Enrolled Courses</h2>
           <div
             style={{
               display: "grid",
@@ -119,27 +149,37 @@ export default function Dashboard() {
                 }}
               >
                 <div style={{ fontWeight: 600 }}>{course.name}</div>
-                <div style={{ color: "#666", fontSize: 12 }}>
-                  {course.category}
+                <div style={{ color: "#666", fontSize: 12 }}>{course.category}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+                  <button
+                    onClick={() => toggleComplete(course.id)}
+                    style={{
+                      flex: 1,
+                      padding: "6px 10px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#5cbd76",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Complete
+                  </button>
+                  <button
+                    onClick={() => removeEnrollment(course.id)}
+                    style={{
+                      flex: 1,
+                      padding: "6px 10px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "#cf5b29",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
                 </div>
-                <button
-                  onClick={() => toggleComplete(course.id)}
-                  style={{
-                    marginTop: "auto",
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    border: "none",
-                    background: completedCoursesSet.has(course.id)
-                      ? "green"
-                      : "#ccc",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  {completedCoursesSet.has(course.id)
-                    ? "Completed"
-                    : "Not Completed"}
-                </button>
               </div>
             ))}
           </div>
@@ -147,9 +187,7 @@ export default function Dashboard() {
 
         {/* Current Recommended Plan */}
         <section style={{ marginTop: 40 }}>
-          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
-            Current Recommended Plan
-          </h2>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Current Recommended Plan</h2>
           {currentPlanCourses.length ? (
             <div
               style={{
@@ -173,26 +211,20 @@ export default function Dashboard() {
                   }}
                 >
                   <div style={{ fontWeight: 600 }}>{course.name}</div>
-                  <div style={{ color: "#666", fontSize: 12 }}>
-                    {course.category}
-                  </div>
+                  <div style={{ color: "#666", fontSize: 12 }}>{course.category}</div>
                   <button
-                    onClick={() => toggleComplete(course.id)}
+                    onClick={() => enrollCourse(course.id)}
                     style={{
                       marginTop: "auto",
                       padding: "6px 10px",
                       borderRadius: 4,
                       border: "none",
-                      background: completedCoursesSet.has(course.id)
-                        ? "green"
-                        : "#ccc",
+                      background: "#45096fff",
                       color: "#fff",
                       cursor: "pointer",
                     }}
                   >
-                    {completedCoursesSet.has(course.id)
-                      ? "Completed"
-                      : "Not Completed"}
+                    Enroll
                   </button>
                 </div>
               ))}
@@ -204,9 +236,7 @@ export default function Dashboard() {
 
         {/* Completed Courses */}
         <section style={{ marginTop: 40 }}>
-          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
-            Completed Courses
-          </h2>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Completed Courses</h2>
           {completedCourses.length ? (
             <div
               style={{
@@ -230,11 +260,8 @@ export default function Dashboard() {
                   }}
                 >
                   <div style={{ fontWeight: 600 }}>{course.name}</div>
-                  <div style={{ color: "#666", fontSize: 12 }}>
-                    {course.category}
-                  </div>
+                  <div style={{ color: "#666", fontSize: 12 }}>{course.category}</div>
                   <button
-                    onClick={() => toggleComplete(course.id)}
                     style={{
                       marginTop: "auto",
                       padding: "6px 10px",
@@ -242,7 +269,7 @@ export default function Dashboard() {
                       border: "none",
                       background: "green",
                       color: "#fff",
-                      cursor: "pointer",
+                      cursor: "default",
                     }}
                   >
                     Completed
