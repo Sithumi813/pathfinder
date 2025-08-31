@@ -13,8 +13,8 @@ const allTags = Array.from(new Set(seedCourses.flatMap(c => c.tags || [])));
 const yearCredits = {
   1: 45,
   2: 48,
-  3: 20,
-  4: 20,
+  3: 30,
+  4: 35,
 };
 
 export default function Signup() {
