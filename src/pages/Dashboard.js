@@ -1,3 +1,4 @@
+// src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { db } from "../firebase";
@@ -28,12 +29,22 @@ export default function Dashboard() {
 
   if (!user || !profile) return <div>Loading...</div>;
 
+  // --- Courses from profile ---
   const enrolledCourses = (profile.enrolledCourses || [])
+    .map((id) => seedCourses.find((c) => c.id === id))
+    .filter(Boolean);
+
+  const currentPlanCourses = (profile.currentPlan || [])
+    .map((id) => seedCourses.find((c) => c.id === id))
+    .filter(Boolean);
+
+  const completedCourses = (profile.completedCourses || [])
     .map((id) => seedCourses.find((c) => c.id === id))
     .filter(Boolean);
 
   const completedCoursesSet = new Set(profile.completedCourses || []);
 
+  // --- Mark/unmark completion ---
   const toggleComplete = async (courseId) => {
     const isCompleted = completedCoursesSet.has(courseId);
     const updatedCourses = isCompleted
@@ -50,6 +61,7 @@ export default function Dashboard() {
     }));
   };
 
+  // --- Credits ---
   const totalCredits = enrolledCourses.reduce((sum, c) => {
     return sum + (completedCoursesSet.has(c.id) ? c.credits : 0);
   }, 0);
@@ -59,8 +71,10 @@ export default function Dashboard() {
   return (
     <>
       <NavBar />
-      <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>        
-        <h1 style={{ marginBottom: 20, color: "#45096fff" }}>Welcome, {profile.name}</h1>
+      <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12 }}>
+        <h1 style={{ marginBottom: 20, color: "#45096fff" }}>
+          Welcome, {profile.name}
+        </h1>
 
         {/* Credits Card */}
         <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
@@ -81,7 +95,9 @@ export default function Dashboard() {
 
         {/* Enrolled Courses */}
         <section style={{ marginTop: 20 }}>
-          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>Enrolled Courses</h2>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
+            Enrolled Courses
+          </h2>
           <div
             style={{
               display: "grid",
@@ -99,19 +115,17 @@ export default function Dashboard() {
                   display: "flex",
                   flexDirection: "column",
                   gap: 6,
-                  minHeight: 150, // keeps consistent height
+                  minHeight: 150,
                 }}
               >
                 <div style={{ fontWeight: 600 }}>{course.name}</div>
                 <div style={{ color: "#666", fontSize: 12 }}>
                   {course.category}
                 </div>
-
-                {/* Button stays at bottom */}
                 <button
                   onClick={() => toggleComplete(course.id)}
                   style={{
-                    marginTop: "auto", // pushes button to bottom
+                    marginTop: "auto",
                     padding: "6px 10px",
                     borderRadius: 4,
                     border: "none",
@@ -129,6 +143,116 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Current Recommended Plan */}
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
+            Current Recommended Plan
+          </h2>
+          {currentPlanCourses.length ? (
+            <div
+              style={{
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              }}
+            >
+              {currentPlanCourses.map((course) => (
+                <div
+                  key={course.id}
+                  style={{
+                    padding: 12,
+                    background: "#f9fafb",
+                    border: "1px solid #ddd",
+                    borderRadius: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    minHeight: 150,
+                  }}
+                >
+                  <div style={{ fontWeight: 600 }}>{course.name}</div>
+                  <div style={{ color: "#666", fontSize: 12 }}>
+                    {course.category}
+                  </div>
+                  <button
+                    onClick={() => toggleComplete(course.id)}
+                    style={{
+                      marginTop: "auto",
+                      padding: "6px 10px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: completedCoursesSet.has(course.id)
+                        ? "green"
+                        : "#ccc",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {completedCoursesSet.has(course.id)
+                      ? "Completed"
+                      : "Not Completed"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>No recommended plan yet. Go to Recommendations page.</div>
+          )}
+        </section>
+
+        {/* Completed Courses */}
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ marginBottom: 20, color: "#45096fff" }}>
+            Completed Courses
+          </h2>
+          {completedCourses.length ? (
+            <div
+              style={{
+                display: "grid",
+                gap: 12,
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              }}
+            >
+              {completedCourses.map((course) => (
+                <div
+                  key={course.id}
+                  style={{
+                    padding: 12,
+                    background: "#e7f9ef",
+                    border: "1px solid #ddd",
+                    borderRadius: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    minHeight: 150,
+                  }}
+                >
+                  <div style={{ fontWeight: 600 }}>{course.name}</div>
+                  <div style={{ color: "#666", fontSize: 12 }}>
+                    {course.category}
+                  </div>
+                  <button
+                    onClick={() => toggleComplete(course.id)}
+                    style={{
+                      marginTop: "auto",
+                      padding: "6px 10px",
+                      borderRadius: 4,
+                      border: "none",
+                      background: "green",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Completed
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>No completed courses yet.</div>
+          )}
         </section>
       </div>
     </>
