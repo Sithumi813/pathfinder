@@ -33,20 +33,54 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "40px auto", padding: 20 }}>
-      <h2>Create an account</h2>
-      <form onSubmit={submit} style={{ display: "grid", gap: 8 }}>
-        <input name="name" placeholder="Full name" value={form.name} onChange={onChange} required />
-        <input name="email" placeholder="Email" value={form.email} onChange={onChange} required />
-        <input name="password" type="password" placeholder="Password" value={form.password} onChange={onChange} required />
-        <select name="year" value={form.year} onChange={onChange}>
+    <div style={{ maxWidth: 400, margin: "60px auto", padding: "30px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", background: "#fff"}}>
+      <h2 style={{ textAlign: "center" ,  marginBottom: "20px", color: "#45096fff" }}>Create an Account</h2>
+      <form onSubmit={submit} style={{ display: "grid", gap: "15px" }}>
+        <input name="name" type="text" placeholder="Full name" value={form.name} onChange={onChange} style={{
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #45096fff",
+        fontSize: "14px"
+      }} required />
+        <input name="email" type="email" placeholder="Email" value={form.email} onChange={onChange} style={{
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #45096fff",
+        fontSize: "14px"
+      }} required />
+        <input name="password" type="password" placeholder="Password" value={form.password} onChange={onChange} style={{
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #45096fff",
+        fontSize: "14px"
+      }} required />
+        <select name="year" value={form.year} onChange={onChange} style={{
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #45096fff",
+        fontSize: "14px"
+      }}>
           <option value={1}>Year 1</option><option value={2}>Year 2</option><option value={3}>Year 3</option><option value={4}>Year 4</option>
         </select>
-        <input name="maxSemCredits" placeholder="Max semester credits" value={form.maxSemCredits} onChange={onChange} />
+        <input name="maxSemCredits" placeholder="Max semester credits" value={form.maxSemCredits} onChange={onChange} style={{
+        padding: "12px",
+        borderRadius: "8px",
+        border: "1px solid #45096fff",
+        fontSize: "14px"
+      }}/>
         <input name="interests" placeholder="Interests (comma separated, e.g., AI,Web)" value={form.interests} onChange={onChange}/>
-        <button type="submit">Sign up</button>
+        <button type="submit"style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "none",
+            background: "#45096fff",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            cursor: "pointer"
+          }}>Sign up</button>
       </form>
-      <div style={{ marginTop: 12 }}>Already have an account? <Link to="/login">Log in</Link></div>
+      <div style={{ marginTop: "15px", textAlign: "center"}}> <span style={{ fontSize: "14px" }}> Already have an account?{" "} <Link to="/login" style={{ color: "#45096fff", fontWeight: "600", textDecoration: "none" }}>Log in</Link></span></div>
     </div>
   );
 }
